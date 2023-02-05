@@ -94,12 +94,17 @@ const handleStripeSubscriptionUpdate = async (
       ? await getEmailBasedOnCustomerId(object.customer)
       : null;
 
+  console.log(
+    "key",
+    Buffer.from(process.env.GOOGLE_PRIVATE_KEY!, "base64").toString("ascii")
+  );
+
   // Authenticate with Google using a service account
   const jwtClient = new JWT({
     email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-    key: Buffer.from(process.env.GOOGLE_PRIVATE_KEY!, "base64").toString(
-      "ascii"
-    ),
+    key: Buffer.from(process.env.GOOGLE_PRIVATE_KEY!, "base64")
+      .toString("ascii")
+      .replace(/\\n/g, "\n"),
     scopes: ["https://www.googleapis.com/auth/spreadsheets"],
   });
 
