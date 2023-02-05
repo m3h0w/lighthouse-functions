@@ -5,7 +5,6 @@ import styles from "@/styles/Home.module.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
-// deploy
 export default function Home() {
   return (
     <>
