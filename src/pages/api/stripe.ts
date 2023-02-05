@@ -97,7 +97,7 @@ const handleStripeSubscriptionUpdate = async (
   // Authenticate with Google using a service account
   const jwtClient = new JWT({
     email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-    key: process.env.GOOGLE_PRIVATE_KEY,
+    key: process.env.GOOGLE_PRIVATE_KEY!.split(String.raw`\n`).join("\n"),
     scopes: ["https://www.googleapis.com/auth/spreadsheets"],
   });
 
