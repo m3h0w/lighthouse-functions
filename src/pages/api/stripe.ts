@@ -191,6 +191,7 @@ const handleStripeSubscriptionUpdate = async (
   }
 
   if (event.type === "customer.subscription.updated") {
+    res.statusCode = 200;
     res.end(`We don't process customer.subscription.updated events right now`);
   }
 
