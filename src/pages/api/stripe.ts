@@ -19,6 +19,7 @@ const checkIfGoogleSheetColumnContainsEmail = async (
   email: string,
   sheets: any
 ) => {
+  console.log(`Checking if Google Sheet contains email: ${email}`);
   const request = {
     spreadsheetId: process.env.GOOGLE_SHEET_ID,
     range: "Sheet1!A:A",
@@ -61,6 +62,7 @@ const deleteRowContainingEmailFromGoogleSheet = async (
   email: string,
   sheets: any
 ) => {
+  console.log(`Deleting email from Google Sheet: ${email}`);
   const request = {
     spreadsheetId: process.env.GOOGLE_SHEET_ID,
     range: "Sheet1!A:A",
@@ -92,6 +94,7 @@ const appendToGoogleSheet = async (
   date: string,
   sheets: any
 ) => {
+  console.log(`Appending to Google Sheet: ${email}, ${name}, ${date}`);
   const request = {
     spreadsheetId: process.env.GOOGLE_SHEET_ID,
     range: "Sheet1!A1",
@@ -107,6 +110,7 @@ const appendToGoogleSheet = async (
 };
 
 const getCustomerNameFromStripe = async (customerId: string) => {
+  console.log(`Getting customer name, customerId: ${customerId}`);
   const customer = await stripe.customers.retrieve(customerId);
   return (customer as any).name;
 };
@@ -161,6 +165,7 @@ const handleStripeSubscriptionUpdate = async (
   const sheets = google.sheets({ version: "v4", auth: jwtClient });
 
   if (event.type === "customer.subscription.created") {
+    console.log(`Received event: ${event.type}`);
     const emailAlreadyThere = await checkIfGoogleSheetColumnContainsEmail(
       customerEmail,
       sheets
