@@ -57,6 +57,60 @@ const deleteEmailFromGoogleSheet = async (email: string, sheets: any) => {
   }
 };
 
+const deleteRowContainingEmailFromGoogleSheet = async (
+  email: string,
+  sheets: any
+) => {
+  const request = {
+    spreadsheetId: process.env.GOOGLE_SHEET_ID,
+    range: "Sheet1!A:A",
+  };
+  const response = await sheets.spreadsheets.values.get(request);
+  const values = response.data.values;
+  if (values) {
+    const index = values.findIndex((row: any) => row[0] === email);
+    if (index > -1) {
+      const request = {
+        spreadsheetId: process.env.GOOGLE_SHEET_ID,
+        range: `Sheet1!A${index + 1}:D${index + 1}`,
+        valueInputOption: "RAW",
+        resource: {
+          values: [["", "", "", "", ""]],
+        },
+      };
+      const response = await sheets.spreadsheets.values.update(request);
+      console.log({ response });
+      console.log(`Deleted email from Google Sheet: ${email}`);
+    }
+  }
+};
+
+const appendToGoogleSheet = async (
+  subId: string,
+  email: string,
+  name: string,
+  date: string,
+  sheets: any
+) => {
+  const request = {
+    spreadsheetId: process.env.GOOGLE_SHEET_ID,
+    range: "Sheet1!A1",
+    valueInputOption: "RAW",
+    resource: {
+      values: [[subId, email, name, "", date]],
+      // values: [["test2@email.com", "test", "2021-12-31T23:59:59.999Z"]],
+    },
+  };
+  const response = await sheets.spreadsheets.values.append(request);
+  console.log({ response });
+  console.log(`Wrote email, name and date to Google Sheet: ${email}`);
+};
+
+const getCustomerNameFromStripe = async (customerId: string) => {
+  const customer = await stripe.customers.retrieve(customerId);
+  return (customer as any).name;
+};
+
 const handleStripeSubscriptionUpdate = async (
   req: NextApiRequest,
   res: NextApiResponse
@@ -117,16 +171,14 @@ const handleStripeSubscriptionUpdate = async (
       sheets
     );
     if (!emailAlreadyThere) {
-      const request = {
-        spreadsheetId: process.env.GOOGLE_SHEET_ID,
-        range: "Sheet1!A1",
-        valueInputOption: "RAW",
-        resource: {
-          values: [[customerEmail]],
-        },
-      };
-      const response = await sheets.spreadsheets.values.append(request);
-      // console.log({ response });
+      const name = await getCustomerNameFromStripe(object.customer);
+      appendToGoogleSheet(
+        object.id,
+        customerEmail,
+        name,
+        new Date().toISOString(),
+        sheets
+      );
       console.log(`Wrote email to Google Sheet: ${customerEmail}`);
 
       res.statusCode = 200;
@@ -142,7 +194,7 @@ const handleStripeSubscriptionUpdate = async (
   }
 
   if (event.type === "customer.subscription.deleted") {
-    await deleteEmailFromGoogleSheet(customerEmail, sheets);
+    await deleteRowContainingEmailFromGoogleSheet(customerEmail, sheets);
     res.statusCode = 200;
     res.end(`Deleted email from Google Sheet: ${customerEmail}`);
   }
