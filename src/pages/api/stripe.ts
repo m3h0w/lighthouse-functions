@@ -93,6 +93,20 @@ const deleteRowContainingEmailFromGoogleSheet = async (
   }
 };
 
+const appendRowBelowLastRow = async (sheets: any) => {
+  const request = {
+    spreadsheetId: process.env.GOOGLE_SHEET_ID,
+    range: "Sheet1!A1",
+    valueInputOption: "RAW",
+    resource: {
+      values: [[""]],
+    },
+  };
+
+  const response = await sheets.spreadsheets.values.append(request);
+  console.log({ response });
+};
+
 const appendToGoogleSheet = async (
   subId: string,
   email: string,
@@ -192,7 +206,9 @@ const handleStripeSubscriptionUpdate = async (
         object.id,
         customerEmail,
         name,
-        new Date(object.created * 1000).toISOString(),
+        object.created
+          ? new Date(object.created * 1000).toISOString()
+          : new Date().toISOString(),
         sheets
       );
       console.log(`Wrote email to Google Sheet: ${customerEmail}`);
