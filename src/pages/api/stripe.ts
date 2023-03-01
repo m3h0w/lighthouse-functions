@@ -81,7 +81,7 @@ const deleteRowContainingEmailFromGoogleSheet = async (
         range: `Sheet1!A${index + 1}:F${index + 1}`,
         valueInputOption: "RAW",
         resource: {
-          values: [["", "", "", "", "", ""]], // this should be the same length as the array in appendTOGoogleSheet to delete all data
+          values: [["", "", "", undefined, "", ""]], // this should be the same length as the array in appendTOGoogleSheet to delete all data
         },
       };
       const response = await sheets.spreadsheets.values.update(request);
