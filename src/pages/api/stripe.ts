@@ -78,10 +78,10 @@ const deleteRowContainingEmailFromGoogleSheet = async (
     if (index > -1) {
       const request = {
         spreadsheetId: process.env.GOOGLE_SHEET_ID,
-        range: `Sheet1!A${index + 1}:F${index + 1}`,
+        range: `Sheet1!A${index + 1}:E${index + 1}`,
         valueInputOption: "RAW",
         resource: {
-          values: [["", "", "", undefined, "", ""]], // this should be the same length as the array in appendTOGoogleSheet to delete all data
+          values: [["", "", "", "", ""]], // this should be the same length as the array in appendTOGoogleSheet to delete all data
         },
       };
       const response = await sheets.spreadsheets.values.update(request);
@@ -115,7 +115,7 @@ const appendToGoogleSheet = async (
     range: "Sheet1!A1",
     valueInputOption: "RAW",
     resource: {
-      values: [[subId, email, name, "", date, new Date().toISOString()]], // important to set EMAIL_COLUMN_NUMBER to the correct column according to this
+      values: [[subId, email, name, date, new Date().toISOString()]], // important to set EMAIL_COLUMN_NUMBER to the correct column according to this
       // values: [["test2@email.com", "test", "2021-12-31T23:59:59.999Z"]],
     },
   };
