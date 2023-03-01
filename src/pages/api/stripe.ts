@@ -67,7 +67,7 @@ const deleteRowContainingEmailFromGoogleSheet = async (
   console.log(`Deleting email from Google Sheet: ${email}`);
   const request = {
     spreadsheetId: process.env.GOOGLE_SHEET_ID,
-    range: "Sheet1!A:A",
+    range: "Sheet1!A:E",
   };
   const response = await sheets.spreadsheets.values.get(request);
   const values = response.data.values;
@@ -78,7 +78,7 @@ const deleteRowContainingEmailFromGoogleSheet = async (
     if (index > -1) {
       const request = {
         spreadsheetId: process.env.GOOGLE_SHEET_ID,
-        range: `Sheet1!A${index + 1}:D${index + 1}`,
+        range: `Sheet1!A${index + 1}:E${index + 1}`,
         valueInputOption: "RAW",
         resource: {
           values: [["", "", "", "", "", ""]], // this should be the same length as the array in appendTOGoogleSheet to delete all data
@@ -100,7 +100,16 @@ const appendToGoogleSheet = async (
   date: string,
   sheets: any
 ) => {
-  console.log(`Appending to Google Sheet: ${email}, ${name}, ${date}`);
+  console.log(
+    `Appending to Google Sheet: ${[
+      subId,
+      email,
+      name,
+      "",
+      date,
+      new Date().toISOString(),
+    ]}`
+  );
   const request = {
     spreadsheetId: process.env.GOOGLE_SHEET_ID,
     range: "Sheet1!A1",
