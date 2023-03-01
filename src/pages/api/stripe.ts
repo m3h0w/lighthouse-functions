@@ -181,6 +181,8 @@ const handleStripeSubscriptionUpdate = async (
       ? await getEmailBasedOnCustomerId(object.customer)
       : null;
 
+  console.info("Received object data: ", object);
+
   // Authenticate with Google using a service account
   const jwtClient = new JWT({
     email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
