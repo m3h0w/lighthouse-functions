@@ -105,7 +105,6 @@ const appendToGoogleSheet = async (
       subId,
       email,
       name,
-      "",
       date,
       new Date().toISOString(),
     ]}`
@@ -200,7 +199,6 @@ const handleStripeSubscriptionUpdate = async (
 
       res.statusCode = 200;
       res.end(`Wrote email to Google Sheet: ${customerEmail}`);
-      console.log(`Email already in Google Sheet: ${customerEmail}`);
     } else {
       res.statusCode = 200;
       res.end(`Email already in Google Sheet: ${customerEmail}`);
