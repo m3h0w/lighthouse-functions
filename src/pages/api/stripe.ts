@@ -135,6 +135,7 @@ const appendToGoogleSheet = async (
   const response = await sheets.spreadsheets.values.append(request);
   console.log({ response });
   console.log(`Wrote email, name and date to Google Sheet: ${email}`);
+  return response;
 };
 
 const getCustomerNameFromStripe = async (customerId: string) => {
@@ -204,7 +205,7 @@ const handleStripeSubscriptionUpdate = async (
     console.info(`Email ${customerEmail} already there: `, emailAlreadyThere);
     if (!emailAlreadyThere) {
       const name = await getCustomerNameFromStripe(object.customer);
-      appendToGoogleSheet(
+      const response = await appendToGoogleSheet(
         object.id,
         customerEmail,
         name,
@@ -213,10 +214,10 @@ const handleStripeSubscriptionUpdate = async (
           : new Date().toISOString(),
         sheets
       );
-      console.log(`Wrote email to Google Sheet: ${customerEmail}`);
+      // console.log(`Wrote email to Google Sheet: ${customerEmail}`);
 
       res.statusCode = 200;
-      res.end(`Wrote email to Google Sheet: ${customerEmail}`);
+      res.end(`Wrote email to Google Sheet: ${customerEmail}, ${response}`);
     } else {
       res.statusCode = 200;
       res.end(`Email already in Google Sheet: ${customerEmail}`);
