@@ -119,6 +119,7 @@ const handleStripeSubscriptionUpdate = async (
   req: NextApiRequest,
   res: NextApiResponse
 ) => {
+  console.info("Sheet ID: ", process.env.GOOGLE_SHEET_ID);
   // Verify the webhook signature
   const rawBody = await buffer(req);
   const stripeSignature = req.headers["stripe-signature"];
