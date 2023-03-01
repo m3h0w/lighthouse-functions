@@ -6,6 +6,8 @@ import { google } from "googleapis";
 import Stripe from "stripe";
 import { buffer } from "micro";
 
+const EMAIL_COLUMN_NUMBER = 1;
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2022-11-15",
 });
@@ -70,7 +72,9 @@ const deleteRowContainingEmailFromGoogleSheet = async (
   const response = await sheets.spreadsheets.values.get(request);
   const values = response.data.values;
   if (values) {
-    const index = values.findIndex((row: any) => row[0] === email);
+    const index = values.findIndex(
+      (row: any) => row[EMAIL_COLUMN_NUMBER] === email
+    );
     if (index > -1) {
       const request = {
         spreadsheetId: process.env.GOOGLE_SHEET_ID,
@@ -83,6 +87,8 @@ const deleteRowContainingEmailFromGoogleSheet = async (
       const response = await sheets.spreadsheets.values.update(request);
       console.log({ response });
       console.log(`Deleted email from Google Sheet: ${email}`);
+    } else {
+      console.log(`Email not found in Google Sheet: ${email}`);
     }
   }
 };
