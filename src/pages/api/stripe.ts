@@ -171,6 +171,7 @@ const handleStripeSubscriptionUpdate = async (
       customerEmail,
       sheets
     );
+    console.info(`Email ${customerEmail} already there: `, emailAlreadyThere);
     if (!emailAlreadyThere) {
       const name = await getCustomerNameFromStripe(object.customer);
       appendToGoogleSheet(
