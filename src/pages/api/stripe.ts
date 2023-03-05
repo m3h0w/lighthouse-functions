@@ -141,7 +141,21 @@ const appendToGoogleSheet = async (
 const getCustomerNameFromStripe = async (customerId: string) => {
   console.log(`Getting customer name, customerId: ${customerId}`);
   const customer = await stripe.customers.retrieve(customerId);
-  return (customer as any).name;
+  if (customer.deleted) {
+    throw new Error("Customer deleted");
+  }
+  return customer.name ?? customer.description ?? "-";
+};
+
+const checkIfCustomerHasActiveSubscription = async (customerId: string) => {
+  console.log(
+    `Checking if customer has active subscription, customerId: ${customerId}`
+  );
+  const subscriptions = await stripe.subscriptions.list({
+    customer: customerId,
+    status: "active",
+  });
+  return subscriptions.data.length > 0;
 };
 
 const handleStripeSubscriptionUpdate = async (
@@ -182,6 +196,7 @@ const handleStripeSubscriptionUpdate = async (
       ? await getEmailBasedOnCustomerId(object.customer)
       : null;
 
+  console.log(`Received event: ${event.type}`);
   console.info("Received object data: ", object);
 
   // Authenticate with Google using a service account
@@ -197,7 +212,6 @@ const handleStripeSubscriptionUpdate = async (
   const sheets = google.sheets({ version: "v4", auth: jwtClient });
 
   if (event.type === "customer.subscription.created") {
-    console.log(`Received event: ${event.type}`);
     const emailAlreadyThere = await checkIfGoogleSheetColumnContainsEmail(
       customerEmail,
       sheets
@@ -225,11 +239,65 @@ const handleStripeSubscriptionUpdate = async (
   }
 
   if (event.type === "customer.subscription.updated") {
-    res.statusCode = 200;
-    res.end(`We don't process customer.subscription.updated events right now`);
+    const hasActiveSubscription = await checkIfCustomerHasActiveSubscription(
+      object.customer
+    );
+    const emailAlreadyThere = await checkIfGoogleSheetColumnContainsEmail(
+      customerEmail,
+      sheets
+    );
+    console.info(`Email ${customerEmail} already there: `, emailAlreadyThere);
+
+    if (hasActiveSubscription) {
+      if (!emailAlreadyThere) {
+        const name = await getCustomerNameFromStripe(object.customer);
+        const response = await appendToGoogleSheet(
+          object.id,
+          customerEmail,
+          name,
+          object.created
+            ? new Date(object.created * 1000).toISOString()
+            : new Date().toISOString(),
+          sheets
+        );
+        // console.log(`Wrote email to Google Sheet: ${customerEmail}`);
+
+        res.statusCode = 200;
+        res.end(
+          `Subscription update & active susbscription found. Wrote email to Google Sheet: ${customerEmail}, ${response}`
+        );
+      } else {
+        res.statusCode = 200;
+        res.end(
+          `Subscription update & active susbscription found. Email already in Google Sheet: ${customerEmail}`
+        );
+      }
+    }
+
+    if (!hasActiveSubscription) {
+      if (emailAlreadyThere) {
+        await deleteRowContainingEmailFromGoogleSheet(customerEmail, sheets);
+        res.statusCode = 200;
+        res.end(
+          `Subscription updated & no active subscription found. Deleted email from Google Sheet: ${customerEmail}`
+        );
+      } else {
+        res.statusCode = 200;
+        res.end(
+          `Subscription updated & no active subscription found. Email not in Google Sheet: ${customerEmail}`
+        );
+      }
+    }
   }
 
   if (event.type === "customer.subscription.deleted") {
+    if (await checkIfCustomerHasActiveSubscription(object.customer)) {
+      res.statusCode = 200;
+      res.end(
+        `Customer has active subscription, not deleting email from Google Sheet: ${customerEmail}`
+      );
+      return;
+    }
     await deleteRowContainingEmailFromGoogleSheet(customerEmail, sheets);
     res.statusCode = 200;
     res.end(`Deleted email from Google Sheet: ${customerEmail}`);
