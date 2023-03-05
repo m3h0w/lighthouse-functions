@@ -29,7 +29,7 @@ const checkIfGoogleSheetColumnContainsEmail = async (
   const response = await sheets.spreadsheets.values.get(request);
   const values = response.data.values;
   if (values) {
-    return values.some((row: any) => row[0] === email);
+    return values.some((row: any) => row[EMAIL_COLUMN_NUMBER] === email);
   } else {
     return false;
   }
