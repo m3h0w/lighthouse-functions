@@ -7,6 +7,7 @@ import Stripe from "stripe";
 import { buffer } from "micro";
 
 const EMAIL_COLUMN_NUMBER = 1;
+const EMAIL_COLUMN_LETTER = "B";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2022-11-15",
@@ -24,12 +25,12 @@ const checkIfGoogleSheetColumnContainsEmail = async (
   console.log(`Checking if Google Sheet contains email: ${email}`);
   const request = {
     spreadsheetId: process.env.GOOGLE_SHEET_ID,
-    range: "Sheet1!A:A",
+    range: `Sheet1!${EMAIL_COLUMN_LETTER}:${EMAIL_COLUMN_LETTER}`,
   };
   const response = await sheets.spreadsheets.values.get(request);
-  const values = response.data.values;
+  const values = response.data.values as any[][];
   if (values) {
-    return values.some((row: any) => row[EMAIL_COLUMN_NUMBER] === email);
+    return values.flat().some((v: any) => v === email);
   } else {
     return false;
   }
@@ -212,12 +213,15 @@ const handleStripeSubscriptionUpdate = async (
   const sheets = google.sheets({ version: "v4", auth: jwtClient });
 
   if (event.type === "customer.subscription.created") {
+    const hasActiveSubscription = await checkIfCustomerHasActiveSubscription(
+      object.customer
+    );
     const emailAlreadyThere = await checkIfGoogleSheetColumnContainsEmail(
       customerEmail,
       sheets
     );
     console.info(`Email ${customerEmail} already there: `, emailAlreadyThere);
-    if (!emailAlreadyThere) {
+    if (!emailAlreadyThere && hasActiveSubscription) {
       const name = await getCustomerNameFromStripe(object.customer);
       const response = await appendToGoogleSheet(
         object.id,
