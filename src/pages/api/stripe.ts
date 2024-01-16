@@ -159,11 +159,33 @@ const checkIfCustomerHasActiveSubscription = async (customerId: string) => {
   return subscriptions.data.length > 0;
 };
 
+const checkIfCustomerHasActiveSubscriptionEmail = async (email: string) => {
+  console.log(`Checking if customer has active subscription, email: ${email}`);
+  const customers = await stripe.customers.list({
+    email,
+  });
+  if (customers.data.length === 0) {
+    console.log(`Customer not found, email: ${email}`);
+    return false;
+  }
+  for (const customer of customers.data) {
+    const subscriptions = await stripe.subscriptions.list({
+      customer: customer.id,
+      status: "active",
+    });
+    if (subscriptions.data.length > 0) {
+      return true;
+    }
+  }
+  return false;
+};
+
 const handleStripeSubscriptionUpdate = async (
   req: NextApiRequest,
   res: NextApiResponse
 ) => {
   console.info("Sheet ID: ", process.env.GOOGLE_SHEET_ID);
+
   // Verify the webhook signature
   const rawBody = await buffer(req);
   const stripeSignature = req.headers["stripe-signature"];
@@ -208,7 +230,6 @@ const handleStripeSubscriptionUpdate = async (
       .replace(/\\n/g, "\n"),
     scopes: ["https://www.googleapis.com/auth/spreadsheets"],
   });
-
   // Get a Google Sheets API client
   const sheets = google.sheets({ version: "v4", auth: jwtClient });
 
@@ -243,9 +264,15 @@ const handleStripeSubscriptionUpdate = async (
   }
 
   if (event.type === "customer.subscription.updated") {
-    const hasActiveSubscription = await checkIfCustomerHasActiveSubscription(
+    const idHasActiveSubscription = await checkIfCustomerHasActiveSubscription(
       object.customer
     );
+    // there might be multiple customers with the same email and if one of them deletes their subscription,
+    // we don't want to delete the email from the Google Sheet if they have a subcription on another customer id
+    const hasActiveSubscription =
+      idHasActiveSubscription ||
+      (await checkIfCustomerHasActiveSubscriptionEmail(customerEmail));
+
     const emailAlreadyThere = await checkIfGoogleSheetColumnContainsEmail(
       customerEmail,
       sheets
